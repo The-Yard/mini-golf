@@ -15,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Directional;
@@ -296,6 +297,7 @@ public class GolfingCourseManager implements Listener {
             return false;
         }
         Location loc = ball.getLocation();
+        Block ballBlock = loc.getBlock();
         Block block = loc.subtract(0, 0.1, 0).getBlock();
         Vector vel = ball.getVelocity();
         switch (block.getType()) {
@@ -331,6 +333,12 @@ public class GolfingCourseManager implements Listener {
                 }
                 break;
             default:
+                // It's possible that the player hit the ball into the cauldron so gotta check that.
+                if (ballBlock.getType().equals(Material.CAULDRON) && ballBlock.equals(golfer.getValue().getCourse().getCurrentHoleCauldronBlock(golfer.getKey()))) {
+                    holeCompleted(ball, golfer);
+                    return false;
+                }
+
                 // Check if floating above slabs
                 if (isBottomSlab(block) && loc.getY() > block.getY() + 0.5) {
                     ball.setGravity(true);
@@ -352,7 +360,11 @@ public class GolfingCourseManager implements Listener {
         if ((vel.getY() >= 0 && vel.length() > 0.34) || !cauldron.equals(golfer.getValue().getCourse().getCurrentHoleCauldronBlock(golfer.getKey()))) {
             return false;
         }
+        holeCompleted(ball, golfer);
+        return true;
+    }
 
+    private static void holeCompleted(Snowball ball, Map.Entry<UUID, GolfingInfo> golfer) {
         Course course = golfer.getValue().getCourse();
 
         // Send message
@@ -379,7 +391,6 @@ public class GolfingCourseManager implements Listener {
                 ball.getPersistentDataContainer().get(getPlugin().strokesKey, INTEGER)
             )
         );
-        return true;
     }
 
     private void handleGlazedTerracotta(Snowball ball, Block block, Vector vel) {
