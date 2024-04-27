@@ -8,6 +8,8 @@ import com.chai.miniGolf.managers.GolfingCourseManager.GolfingInfo;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.data.Levelled;
+import org.bukkit.block.data.type.BubbleColumn;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Snowball;
@@ -115,7 +117,7 @@ public class ProjectileListener implements Listener
 
 			case UP:
 			case DOWN:
-				if (event.getHitBlock().getType() == Material.SOUL_SAND || loc.getBlock().getType() == Material.WATER)
+				if (event.getHitBlock().getType() == Material.SOUL_SAND || (loc.getBlock().getType() == Material.WATER && loc.getBlock().getBlockData() instanceof Levelled levelled && levelled.getLevel() == 0 && !(loc.getBlock().getBlockData() instanceof BubbleColumn)))
 				{
 					// Move ball to last location
 					ball.setVelocity(new Vector(0, 0, 0));

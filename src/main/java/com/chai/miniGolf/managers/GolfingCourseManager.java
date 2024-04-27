@@ -18,6 +18,8 @@ import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.Levelled;
+import org.bukkit.block.data.type.BubbleColumn;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
@@ -324,7 +326,9 @@ public class GolfingCourseManager implements Listener {
                 handleGlazedTerracotta(ball, block, vel);
                 break;
             case WATER:
-                returnBallToLastLoc(ball);
+                if (block.getBlockData() instanceof Levelled levelled && levelled.getLevel() == 0 && !(block.getBlockData() instanceof BubbleColumn)) {
+                    returnBallToLastLoc(ball);
+                }
                 break;
             default:
                 // Check if floating above slabs
