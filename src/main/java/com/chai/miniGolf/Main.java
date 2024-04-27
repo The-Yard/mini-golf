@@ -54,6 +54,7 @@ public class Main extends JavaPlugin {
 	public final NamespacedKey xKey = new NamespacedKey(this, "x");
 	public final NamespacedKey yKey = new NamespacedKey(this, "y");
 	public final NamespacedKey zKey = new NamespacedKey(this, "z");
+	public final NamespacedKey bubbleColumnKey = new NamespacedKey(this, "bubbleColumnExitStep"); // 0 - Nothing to do with bubbleColumn yet, 1 - currently in bubble column, 2 - was in bubble column and needs to find exit spot when y vel <= 0
 
 	// Stuff
 	private final AttributeModifier noDamage = new AttributeModifier(UUID.randomUUID(), "generic.attackDamage", -10, Operation.ADD_NUMBER, EquipmentSlot.HAND);
@@ -62,7 +63,7 @@ public class Main extends JavaPlugin {
 	// Constants
 	public final double floorOffset = 0.05;
 
-	// Items
+    // Items
 	private ItemStack golfBall;
 	private ItemStack putter;
 	private ItemStack wedge;

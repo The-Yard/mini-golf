@@ -9,6 +9,7 @@ import com.chai.miniGolf.models.Course;
 import com.chai.miniGolf.utils.ShortUtils.ShortUtils;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
@@ -43,9 +44,14 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -54,6 +60,7 @@ import static com.chai.miniGolf.Main.getPlugin;
 import static com.chai.miniGolf.managers.ScorecardManager.holeResultColor;
 import static com.chai.miniGolf.managers.ScorecardManager.holeResultString;
 import static com.chai.miniGolf.utils.SharedMethods.isBottomSlab;
+import static org.bukkit.persistence.PersistentDataType.BOOLEAN;
 import static org.bukkit.persistence.PersistentDataType.DOUBLE;
 import static org.bukkit.persistence.PersistentDataType.INTEGER;
 import static org.bukkit.persistence.PersistentDataType.STRING;
@@ -308,6 +315,9 @@ public class GolfingCourseManager implements Listener {
                 break;
             case AIR:
                 ball.setGravity(true);
+                if (Integer.valueOf(1).equals(ball.getPersistentDataContainer().get(getPlugin().bubbleColumnKey, INTEGER))) {
+                    ball.getPersistentDataContainer().set(getPlugin().bubbleColumnKey, INTEGER, 2);
+                }
                 break;
             case SLIME_BLOCK:
                 vel.setY(0.25);
@@ -332,11 +342,19 @@ public class GolfingCourseManager implements Listener {
                     returnBallToLastLoc(ball);
                 }
                 break;
+            case BUBBLE_COLUMN:
+                ball.getPersistentDataContainer().set(getPlugin().bubbleColumnKey, INTEGER, 1);
+                break;
             default:
                 // It's possible that the player hit the ball into the cauldron so gotta check that.
                 if (ballBlock.getType().equals(Material.CAULDRON) && ballBlock.equals(golfer.getValue().getCourse().getCurrentHoleCauldronBlock(golfer.getKey()))) {
                     holeCompleted(ball, golfer);
                     return false;
+                }
+
+                // Need to know if we're in a bubbleColumn for exiting the bubbleColumn purposes
+                if (ballBlock.getBlockData() instanceof BubbleColumn) {
+                    ball.getPersistentDataContainer().set(getPlugin().bubbleColumnKey, INTEGER, 1);
                 }
 
                 // Check if floating above slabs
@@ -352,7 +370,44 @@ public class GolfingCourseManager implements Listener {
                 ball.setVelocity(vel);
                 break;
         }
+        if (Integer.valueOf(2).equals(ball.getPersistentDataContainer().get(getPlugin().bubbleColumnKey, INTEGER)) && vel.getY() < 0) {
+            handleExitingOfBubbleColumn(ball);
+            ball.getPersistentDataContainer().set(getPlugin().bubbleColumnKey, INTEGER, 0);
+        }
         return true;
+    }
+
+    private void handleExitingOfBubbleColumn(Snowball ball) {
+        Block ballBlock = ball.getLocation().getBlock();
+        List<BubbleColumnExitBlock> potentialExitBlocks = new ArrayList<>();
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                BubbleColumnExitBlock exitBlock = getValidExitBlockOrNull(ballBlock.getRelative(x, 0, z));
+                if (exitBlock != null) {
+                    potentialExitBlocks.add(exitBlock);
+                }
+            }
+        }
+        potentialExitBlocks.stream()
+            .min(Comparator.comparingInt(BubbleColumnExitBlock::getDistanceToGround))
+            .ifPresent(eb -> ball.teleport(eb.getExitBlock().getLocation().add(0.5, ball.getY() - ((int)ball.getY()), 0.5)));
+    }
+
+    @Nullable
+    private BubbleColumnExitBlock getValidExitBlockOrNull(Block block) {
+        int distanceToGround = 0;
+        Block originalBlock = block;
+        Material blockType = block.getType();
+        while (blockType == Material.AIR) {
+            distanceToGround++;
+            block = block.getRelative(0, -1, 0);
+            blockType = block.getType();
+        }
+        // If the "ground" is water or the exit block was never AIR to begin with, it's not valid
+        if (blockType == Material.WATER || blockType.equals(Material.BUBBLE_COLUMN) || block.equals(originalBlock)) {
+            return null;
+        }
+        return BubbleColumnExitBlock.builder().exitBlock(originalBlock).distanceToGround(distanceToGround).build();
     }
 
     private boolean handleCauldronAndDecideIfSuccessfullyCompletedHole(Snowball ball, Vector vel, Block cauldron, Map.Entry<UUID, GolfingInfo> golfer) {
@@ -440,5 +495,12 @@ public class GolfingCourseManager implements Listener {
             }
             golfball = ball;
         }
+    }
+
+    @Getter
+    @Builder
+    public static class BubbleColumnExitBlock {
+        private final Block exitBlock;
+        private final int distanceToGround;
     }
 }

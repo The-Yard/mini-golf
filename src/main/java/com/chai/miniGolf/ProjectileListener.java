@@ -71,6 +71,10 @@ public class ProjectileListener implements Listener
 			b.set(plugin.yKey, PersistentDataType.DOUBLE, y);
 			b.set(plugin.zKey, PersistentDataType.DOUBLE, z);
 
+			// Was in Bubble Column
+			int bubbleColumnStatus = c.get(plugin.bubbleColumnKey, PersistentDataType.INTEGER);
+			b.set(plugin.bubbleColumnKey, PersistentDataType.INTEGER, bubbleColumnStatus);
+
 			// Bounce off surfaces
 			Material mat = event.getHitBlock().getType();
 			switch (event.getHitBlockFace()) {

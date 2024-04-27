@@ -114,6 +114,7 @@ public class Course {
         c.set(getPlugin().zKey, PersistentDataType.DOUBLE, loc.getZ());
         c.set(getPlugin().strokesKey, PersistentDataType.INTEGER, 0);
         c.set(getPlugin().ownerNameKey, PersistentDataType.STRING, p.getName());
+        c.set(getPlugin().bubbleColumnKey, PersistentDataType.INTEGER, 0);
         ball.setCustomName(p.getName() + " - 0");
         ball.setCustomNameVisible(true);
         return ball;
