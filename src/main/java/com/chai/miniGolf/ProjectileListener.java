@@ -75,7 +75,7 @@ public class ProjectileListener implements Listener
 			Material mat = event.getHitBlock().getType();
 			switch (event.getHitBlockFace()) {
 				case NORTH:
-					if (mat == Material.IRON_BARS) {
+					if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
 						handleIronBars(vel, ball);
 					}
 				case SOUTH:
@@ -85,7 +85,7 @@ public class ProjectileListener implements Listener
 						//ball.teleport(loc);
 					} else if (mat == Material.SLIME_BLOCK) {
 						vel.setZ(Math.copySign(0.25, -vel.getZ()));
-					} else if (mat == Material.IRON_BARS) {
+					} else if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
 						handleIronBars(vel, ball);
 					} else {
 						vel.setZ(-vel.getZ());
@@ -93,7 +93,7 @@ public class ProjectileListener implements Listener
 					break;
 
 				case EAST:
-					if (mat == Material.IRON_BARS) {
+					if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
 						handleIronBars(vel, ball);
 					}
 				case WEST:
@@ -103,7 +103,7 @@ public class ProjectileListener implements Listener
 						//ball.teleport(loc);
 					} else if (mat == Material.SLIME_BLOCK) {
 						vel.setX(Math.copySign(0.25, -vel.getX()));
-					} else if (mat == Material.IRON_BARS) {
+					} else if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
 						handleIronBars(vel, ball);
 					} else {
 						vel.setX(-vel.getX());
@@ -156,9 +156,9 @@ public class ProjectileListener implements Listener
 		if (vel.getY() != 0.0) {
 			ball.setGravity(true);
 		}
-		vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
-		vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
-		vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+		vel.setX(0);
+		vel.setY(0);
+		vel.setZ(0);
 
 		// The iron bars are small blocks, so need to move the ball such that it's closer to the actual bars
 		ball.teleport(ball.getLocation().add(xOffset, 0, zOffset));
