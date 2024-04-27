@@ -28,11 +28,9 @@ public class ProjectileListener implements Listener
 	private final Main plugin = JavaPlugin.getPlugin(Main.class);
 
 	@EventHandler
-	public void onProjectileHit(ProjectileHitEvent event)
-	{
+	public void onProjectileHit(ProjectileHitEvent event) {
 		Entity ent = event.getEntity();
-		if (ent instanceof Snowball)
-		{
+		if (ent instanceof Snowball) {
 			// Check if golf ball
 			PersistentDataContainer c = ent.getPersistentDataContainer();
 			Optional<GolfingInfo> golfingInfo = getPlugin().golfingCourseManager().getGolfingInfoFromGolfball((Snowball) ent);
@@ -41,8 +39,7 @@ public class ProjectileListener implements Listener
 			}
 
 			// Golf ball hit entity
-			if (event.getHitBlockFace() == null)
-			{
+			if (event.getHitBlockFace() == null) {
 				event.setCancelled(true);
 				return;
 			}
@@ -76,70 +73,74 @@ public class ProjectileListener implements Listener
 
 			// Bounce off surfaces
 			Material mat = event.getHitBlock().getType();
+			switch (event.getHitBlockFace()) {
+				case NORTH:
+					if (mat == Material.IRON_BARS) {
+						vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+					}
+				case SOUTH:
+					if (mat == Material.HONEY_BLOCK) {
+						vel.setZ(0);
+						//loc.setZ(Math.round(loc.getZ()));
+						//ball.teleport(loc);
+					} else if (mat == Material.SLIME_BLOCK) {
+						vel.setZ(Math.copySign(0.25, -vel.getZ()));
+					} else if (mat == Material.IRON_BARS) {
+						vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+					} else {
+						vel.setZ(-vel.getZ());
+					}
+					break;
 
-			switch (event.getHitBlockFace())
-			{
-			case NORTH:
-			case SOUTH:
-				if (mat == Material.HONEY_BLOCK)
-				{
-					vel.setZ(0);
-					//loc.setZ(Math.round(loc.getZ()));
-					//ball.teleport(loc);
-				}
-				else if (mat == Material.SLIME_BLOCK)
-				{
-					vel.setZ(Math.copySign(0.25, -vel.getZ()));
-				}
-				else
-				{
-					vel.setZ(-vel.getZ());
-				}
-				break;
+				case EAST:
+					if (mat == Material.IRON_BARS) {
+						vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+					}
+				case WEST:
+					if (mat == Material.HONEY_BLOCK) {
+						vel.setX(0);
+						//loc.setX(Math.round(loc.getX()));
+						//ball.teleport(loc);
+					} else if (mat == Material.SLIME_BLOCK) {
+						vel.setX(Math.copySign(0.25, -vel.getX()));
+					} else if (mat == Material.IRON_BARS) {
+						vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+					} else {
+						vel.setX(-vel.getX());
+					}
+					break;
 
-			case EAST:
-			case WEST:
-				if (mat == Material.HONEY_BLOCK)
-				{
-					vel.setX(0);
-					//loc.setX(Math.round(loc.getX()));
-					//ball.teleport(loc);
-				}
-				else if (mat == Material.SLIME_BLOCK)
-				{
-					vel.setX(Math.copySign(0.25, -vel.getX()));
-				}
-				else
-				{
-					vel.setX(-vel.getX());
-				}
-				break;
+				case UP:
+				case DOWN:
+					if (event.getHitBlock().getType() == Material.SOUL_SAND || (loc.getBlock().getType() == Material.WATER && loc.getBlock().getBlockData() instanceof Levelled levelled && levelled.getLevel() == 0 && !(loc.getBlock().getBlockData() instanceof BubbleColumn))) {
+						// Move ball to last location
+						ball.setVelocity(new Vector(0, 0, 0));
+						ball.teleport(new Location(world, x, y, z));
+						ball.setGravity(false);
+						return;
+					}
 
-			case UP:
-			case DOWN:
-				if (event.getHitBlock().getType() == Material.SOUL_SAND || (loc.getBlock().getType() == Material.WATER && loc.getBlock().getBlockData() instanceof Levelled levelled && levelled.getLevel() == 0 && !(loc.getBlock().getBlockData() instanceof BubbleColumn)))
-				{
-					// Move ball to last location
-					ball.setVelocity(new Vector(0, 0, 0));
-					ball.teleport(new Location(world, x, y, z));
-					ball.setGravity(false);
-					return;
-				}
+					vel.setY(-vel.getY());
+					vel.multiply(0.7);
 
-				vel.setY(-vel.getY());
-				vel.multiply(0.7);
+					if (vel.getY() < 0.1) {
+						vel.setY(0);
+						loc.setY(Math.floor(loc.getY() * 2) / 2 + plugin.floorOffset);
+						ball.teleport(loc);
+						ball.setGravity(false);
+					}
+					break;
 
-				if (vel.getY() < 0.1)
-				{
-					vel.setY(0);
-					loc.setY(Math.floor(loc.getY() * 2) / 2 + plugin.floorOffset);
-					ball.teleport(loc);
-					ball.setGravity(false);
-				}
-				break;
-
-			default:
-				break;
+				default:
+					break;
 			}
 
 			// Friction

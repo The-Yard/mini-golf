@@ -4,6 +4,9 @@ courseCompletedMsg: "&6You've finished &4&v1 (Par &v2)&6 with a score of &v3"
 # Friction is like a velocity multiplier, so lower friction is "stronger" friction. Don't put something >= 1 or the ball will never stop
 friction: 0.975
 sand_friction: 0.9
+#If you want the ball to lose all horizontal velocity when it hits the flag pole (iron bars), set this to 1.0. If you want iron bars to bounce normally,
+#keep this at 1.0. Anything between 0.0 and 1.0 are also valid.
+flag_pole_velocity_multiplier: 1.0
 # The Further a player is from the ball, the closer to the "max" power (It's like the player had more of a windup)
 # A y power of like 0.25 is sufficient to go over a block
 club_power:

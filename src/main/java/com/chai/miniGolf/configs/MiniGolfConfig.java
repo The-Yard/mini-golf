@@ -30,6 +30,8 @@ public class MiniGolfConfig {
     @Getter private Map<String, ClubPower> clubPowerMap;
     @Getter private Double friction;
     @Getter private Double sandFriction;
+    @Getter private Double flagPoleVelocityMultiplier;
+    @Getter private Double magentaGlazedTerracottaAcceleration;
     private String scoreMsg;
     private String courseCompletedMsg;
 
@@ -48,6 +50,8 @@ public class MiniGolfConfig {
         clubPowerMap.put(getPlugin().ironKey.getKey(), loadClubPower(config, getPlugin().ironKey.getKey()));
         friction = config.getDouble("friction", originalConfig.getDouble("friction"));
         sandFriction = config.getDouble("sand_friction", originalConfig.getDouble("sand_friction"));
+        flagPoleVelocityMultiplier = config.getDouble("flag_pole_velocity_multiplier", originalConfig.getDouble("flag_pole_velocity_multiplier"));
+        magentaGlazedTerracottaAcceleration = config.getDouble("magenta_glazed_terracotta_acceleration", originalConfig.getDouble("magenta_glazed_terracotta_acceleration"));
         courses = loadCourses();
     }
 
