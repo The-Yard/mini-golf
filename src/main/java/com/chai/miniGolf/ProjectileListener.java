@@ -76,9 +76,7 @@ public class ProjectileListener implements Listener
 			switch (event.getHitBlockFace()) {
 				case NORTH:
 					if (mat == Material.IRON_BARS) {
-						vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
-						vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
-						vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						handleIronBars(vel, ball);
 					}
 				case SOUTH:
 					if (mat == Material.HONEY_BLOCK) {
@@ -88,9 +86,7 @@ public class ProjectileListener implements Listener
 					} else if (mat == Material.SLIME_BLOCK) {
 						vel.setZ(Math.copySign(0.25, -vel.getZ()));
 					} else if (mat == Material.IRON_BARS) {
-						vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
-						vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
-						vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						handleIronBars(vel, ball);
 					} else {
 						vel.setZ(-vel.getZ());
 					}
@@ -98,9 +94,7 @@ public class ProjectileListener implements Listener
 
 				case EAST:
 					if (mat == Material.IRON_BARS) {
-						vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
-						vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
-						vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						handleIronBars(vel, ball);
 					}
 				case WEST:
 					if (mat == Material.HONEY_BLOCK) {
@@ -110,9 +104,7 @@ public class ProjectileListener implements Listener
 					} else if (mat == Material.SLIME_BLOCK) {
 						vel.setX(Math.copySign(0.25, -vel.getX()));
 					} else if (mat == Material.IRON_BARS) {
-						vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
-						vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
-						vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+						handleIronBars(vel, ball);
 					} else {
 						vel.setX(-vel.getX());
 					}
@@ -146,5 +138,29 @@ public class ProjectileListener implements Listener
 			// Friction
 			ball.setVelocity(vel);
 		}
+	}
+
+	private static void handleIronBars(Vector vel, Snowball ball) {
+		double xOffset = 0.0;
+		double zOffset = 0.0;
+		if (vel.getX() > 0) {
+			xOffset = 0.25;
+		} else if (vel.getX() < 0) {
+			xOffset = -0.25;
+		}
+		if (vel.getZ() > 0) {
+			zOffset = 0.25;
+		} else if (vel.getZ() < 0) {
+			zOffset = -0.25;
+		}
+		if (vel.getY() != 0.0) {
+			ball.setGravity(true);
+		}
+		vel.setX(vel.getX() * getPlugin().config().getFlagPoleVelocityMultiplier());
+		vel.setY(vel.getY() * getPlugin().config().getFlagPoleVelocityMultiplier());
+		vel.setZ(vel.getZ() * getPlugin().config().getFlagPoleVelocityMultiplier());
+
+		// The iron bars are small blocks, so need to move the ball such that it's closer to the actual bars
+		ball.teleport(ball.getLocation().add(xOffset, 0, zOffset));
 	}
 }
