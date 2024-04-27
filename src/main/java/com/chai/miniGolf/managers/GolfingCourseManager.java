@@ -332,8 +332,7 @@ public class GolfingCourseManager implements Listener {
                 break;
             default:
                 // Check if floating above slabs
-                if (isBottomSlab(block) && loc.getY() > block.getY() + 0.5)
-                {
+                if (isBottomSlab(block) && loc.getY() > block.getY() + 0.5) {
                     ball.setGravity(true);
                 }
 
@@ -388,21 +387,21 @@ public class GolfingCourseManager implements Listener {
         Vector newVel;
         switch (directional.getFacing()) {
             case NORTH:
-                newVel = new Vector(0, 0, 0.1);
+                newVel = new Vector(vel.getX(), vel.getY(), vel.getZ() + getPlugin().config().getMagentaGlazedTerracottaAcceleration());
                 break;
             case SOUTH:
-                newVel = new Vector(0, 0, -0.1);
+                newVel = new Vector(vel.getX(), vel.getY(), -vel.getZ() + getPlugin().config().getMagentaGlazedTerracottaAcceleration());
                 break;
             case EAST:
-                newVel = new Vector(-0.1, 0, 0);
+                newVel = new Vector(-vel.getX() + getPlugin().config().getMagentaGlazedTerracottaAcceleration(), vel.getY(), vel.getZ());
                 break;
             case WEST:
-                newVel = new Vector(0.1, 0, 0);
+                newVel = new Vector(vel.getZ() + getPlugin().config().getMagentaGlazedTerracottaAcceleration(), vel.getY(), vel.getZ());
                 break;
             default:
                 return;
         }
-        ball.setVelocity(vel.multiply(9.0).add(newVel).multiply(0.1));
+        ball.setVelocity(newVel);
     }
 
     private void cleanUpAnyUnusedBalls(Player golfer) {
