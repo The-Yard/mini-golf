@@ -1,13 +1,16 @@
 package com.chai.miniGolf;
 
-import java.util.Map.Entry;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import com.chai.miniGolf.managers.GolfingCourseManager.GolfingInfo;
+import com.chai.miniGolf.models.Teleporters;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.type.BubbleColumn;
 import org.bukkit.entity.Entity;
@@ -34,6 +37,7 @@ public class ProjectileListener implements Listener
 			// Check if golf ball
 			PersistentDataContainer c = ent.getPersistentDataContainer();
 			Optional<GolfingInfo> golfingInfo = getPlugin().golfingCourseManager().getGolfingInfoFromGolfball((Snowball) ent);
+			Optional<UUID> golferUuid = getPlugin().golfingCourseManager().getPUuidFromGolfball((Snowball) ent);
 			if (!c.has(plugin.strokesKey, PersistentDataType.INTEGER) || golfingInfo.isEmpty()) {
 				return;
 			}
@@ -79,9 +83,6 @@ public class ProjectileListener implements Listener
 			Material mat = event.getHitBlock().getType();
 			switch (event.getHitBlockFace()) {
 				case NORTH:
-					if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
-						handleIronBars(vel, ball);
-					}
 				case SOUTH:
 					if (mat == Material.HONEY_BLOCK) {
 						vel.setZ(0);
@@ -91,15 +92,19 @@ public class ProjectileListener implements Listener
 						vel.setZ(Math.copySign(0.25, -vel.getZ()));
 					} else if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
 						handleIronBars(vel, ball);
+					} else if (mat == Material.OBSIDIAN && golferUuid.isPresent()) {
+						Vector newVel = handleTeleporter(golferUuid.get(), golfingInfo.get(), event.getHitBlock(), event.getHitBlockFace(), vel, ball);
+						if (newVel == null) { // Obsidian wasn't a teleporter
+							vel.setZ(-vel.getZ());
+						} else {
+							vel = newVel;
+						}
 					} else {
 						vel.setZ(-vel.getZ());
 					}
 					break;
 
 				case EAST:
-					if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
-						handleIronBars(vel, ball);
-					}
 				case WEST:
 					if (mat == Material.HONEY_BLOCK) {
 						vel.setX(0);
@@ -109,6 +114,13 @@ public class ProjectileListener implements Listener
 						vel.setX(Math.copySign(0.25, -vel.getX()));
 					} else if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
 						handleIronBars(vel, ball);
+					} else if (mat == Material.OBSIDIAN && golferUuid.isPresent()) {
+						Vector newVel = handleTeleporter(golferUuid.get(), golfingInfo.get(), event.getHitBlock(), event.getHitBlockFace(), vel, ball);
+						if (newVel == null) { // Obsidian wasn't a teleporter
+							vel.setX(-vel.getX());
+						} else {
+							vel = newVel;
+						}
 					} else {
 						vel.setX(-vel.getX());
 					}
@@ -122,6 +134,13 @@ public class ProjectileListener implements Listener
 						ball.teleport(new Location(world, x, y, z));
 						ball.setGravity(false);
 						return;
+					} else if (mat == Material.OBSIDIAN && golferUuid.isPresent()) {
+						Vector newVel = handleTeleporter(golferUuid.get(), golfingInfo.get(), event.getHitBlock(), event.getHitBlockFace(), vel, ball);
+						if (newVel == null) { // Obsidian wasn't a teleporter
+							vel.setY(-vel.getY());
+						} else {
+							vel = newVel;
+						}
 					}
 
 					vel.setY(-vel.getY());
@@ -142,6 +161,21 @@ public class ProjectileListener implements Listener
 			// Friction
 			ball.setVelocity(vel);
 		}
+	}
+
+	private Vector handleTeleporter(UUID golferUuid, GolfingInfo golfingInfo, Block blockHit, BlockFace faceHit, Vector vel, Snowball ball) {
+		int hole = golfingInfo.getCourse().playersCurrentHole(golferUuid);
+		List<Teleporters> teleporters = golfingInfo.getCourse().getHoles().get(hole).getTeleporters();
+		Optional<Teleporters> teleporter = teleporters.stream().filter(t -> t.getStartingLocX() == blockHit.getX() && t.getStartingLocY() == blockHit.getY() && t.getStartingLocZ() == blockHit.getZ()).findFirst();
+		if (teleporter.isEmpty()) {
+			return null;
+		}
+		Vector newVel = Teleporters.velocityAfterTeleport(vel, faceHit, teleporter.get());
+		BlockFace destinationFace = Teleporters.getConfiguredDestinationDirection(faceHit, teleporter.get());
+		Vector ballOffsetForDestinationFace = Teleporters.getOffsetForDestinationFace(destinationFace, ball.getY() - ((int)ball.getY()));
+		Location newLoc = teleporter.get().getDestinationBlock(ball.getWorld()).getRelative(destinationFace).getLocation().add(ballOffsetForDestinationFace);
+		ball.teleport(newLoc);
+		return newVel;
 	}
 
 	private static void handleIronBars(Vector vel, Snowball ball) {

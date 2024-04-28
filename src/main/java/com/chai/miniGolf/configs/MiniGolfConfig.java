@@ -2,11 +2,14 @@ package com.chai.miniGolf.configs;
 
 import com.chai.miniGolf.models.Course;
 import com.chai.miniGolf.models.Hole;
+import com.chai.miniGolf.models.Teleporters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import lombok.Getter;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
@@ -186,6 +189,22 @@ public class MiniGolfConfig {
         course.getHoles().get(holeIndex).setBallStartingLocX(startingBallLoc.getX());
         course.getHoles().get(holeIndex).setBallStartingLocY(startingBallLoc.getY());
         course.getHoles().get(holeIndex).setBallStartingLocZ(startingBallLoc.getZ());
+        saveCourse(course);
+    }
+
+    public void createTeleporters(Course course, int holeIndex, Block startBlock, Block destinationBlock) {
+        course.getHoles().get(holeIndex).createNewTeleporter(startBlock, destinationBlock);
+        saveCourse(course);
+    }
+
+    public void updateTeleporterRule(Course course, Teleporters teleporter, BlockFace hitFace, BlockFace destinationFace) {
+        teleporter.setRule(hitFace, destinationFace);
+        saveCourse(course);
+        loadCourses();
+    }
+
+    public void deleteTeleporters(Course course, int holeIndex, Block teleporterBlockToDelete) {
+        course.getHoles().get(holeIndex).deleteTeleporter(teleporterBlockToDelete);
         saveCourse(course);
     }
 

@@ -6,6 +6,7 @@ import com.chai.miniGolf.events.HoleCompletedEvent;
 import com.chai.miniGolf.events.NextHoleRequestedEvent;
 import com.chai.miniGolf.events.PlayerDoneGolfingEvent;
 import com.chai.miniGolf.models.Course;
+import com.chai.miniGolf.models.Teleporters;
 import com.chai.miniGolf.utils.ShortUtils.ShortUtils;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.type.BubbleColumn;
@@ -60,6 +62,10 @@ import static com.chai.miniGolf.Main.getPlugin;
 import static com.chai.miniGolf.managers.ScorecardManager.holeResultColor;
 import static com.chai.miniGolf.managers.ScorecardManager.holeResultString;
 import static com.chai.miniGolf.utils.SharedMethods.isBottomSlab;
+import static org.bukkit.block.BlockFace.EAST;
+import static org.bukkit.block.BlockFace.NORTH;
+import static org.bukkit.block.BlockFace.SOUTH;
+import static org.bukkit.block.BlockFace.WEST;
 import static org.bukkit.persistence.PersistentDataType.BOOLEAN;
 import static org.bukkit.persistence.PersistentDataType.DOUBLE;
 import static org.bukkit.persistence.PersistentDataType.INTEGER;
@@ -273,7 +279,7 @@ public class GolfingCourseManager implements Listener {
             .findFirst();
     }
 
-    private Optional<UUID> getPUuidFromGolfball(Snowball ball) {
+    public Optional<UUID> getPUuidFromGolfball(Snowball ball) {
         return golfers.entrySet().stream()
             .filter(e -> ball.equals(e.getValue().getGolfball()))
             .map(Map.Entry::getKey)
@@ -345,6 +351,9 @@ public class GolfingCourseManager implements Listener {
             case BUBBLE_COLUMN:
                 ball.getPersistentDataContainer().set(getPlugin().bubbleColumnKey, INTEGER, 1);
                 break;
+            case OBSIDIAN:
+                handleTeleporters(golfer, ball, block, vel);
+                break;
             default:
                 // It's possible that the player hit the ball into the cauldron so gotta check that.
                 if (ballBlock.getType().equals(Material.CAULDRON) && ballBlock.equals(golfer.getValue().getCourse().getCurrentHoleCauldronBlock(golfer.getKey()))) {
@@ -375,6 +384,39 @@ public class GolfingCourseManager implements Listener {
             ball.getPersistentDataContainer().set(getPlugin().bubbleColumnKey, INTEGER, 0);
         }
         return true;
+    }
+
+    private void handleTeleporters(Map.Entry<UUID, GolfingInfo> golfer, Snowball ball, Block block, Vector vel) {
+        int hole = golfer.getValue().getCourse().playersCurrentHole(golfer.getKey());
+        List<Teleporters> teleporters = golfer.getValue().getCourse().getHoles().get(hole).getTeleporters();
+        Optional<Teleporters> teleporter = teleporters.stream().filter(t -> t.getStartingLocX() == block.getX() && t.getStartingLocY() == block.getY() && t.getStartingLocZ() == block.getZ()).findFirst();
+        if (teleporter.isEmpty()) {
+            return;
+        }
+        BlockFace faceEntered = getFaceEntered(ball);
+        Vector newVel = Teleporters.velocityAfterTeleport(vel, faceEntered, teleporter.get());
+        BlockFace destinationFace = Teleporters.getConfiguredDestinationDirection(faceEntered, teleporter.get());
+        Vector ballOffsetForDestinationFace = Teleporters.getOffsetForDestinationFace(destinationFace, 1 + ball.getY() - ((int)ball.getY()));
+        Location newLoc = teleporter.get().getDestinationBlock(ball.getWorld()).getRelative(destinationFace).getLocation().add(ballOffsetForDestinationFace);
+        ball.teleport(newLoc);
+        ball.setVelocity(newVel);
+    }
+
+    private BlockFace getFaceEntered(Snowball ball) {
+        Vector vel = ball.getVelocity();
+        double positiveXVel = vel.getX();
+        double negativeXVel = -vel.getX();
+        double positiveZVel = vel.getZ();
+        double negativeZVel = -vel.getZ();
+        if (positiveXVel > negativeXVel && positiveXVel > positiveZVel && positiveXVel > negativeZVel) {
+            return WEST;
+        } else if (negativeXVel > positiveZVel && negativeXVel > negativeZVel) {
+            return EAST;
+        } else if (positiveZVel > negativeZVel) {
+            return NORTH;
+        } else {
+            return SOUTH;
+        }
     }
 
     private void handleExitingOfBubbleColumn(Snowball ball) {

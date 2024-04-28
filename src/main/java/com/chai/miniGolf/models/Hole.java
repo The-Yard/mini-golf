@@ -7,9 +7,12 @@ import lombok.extern.jackson.Jacksonized;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,6 +33,7 @@ public class Hole {
     private Double holeLocX;
     private Double holeLocY;
     private Double holeLocZ;
+    private List<Teleporters> teleporters;
     @JsonIgnore
     private Map<UUID, Integer> playerScores;
 
@@ -64,6 +68,45 @@ public class Hole {
     @JsonIgnore
     public Block getHoleBlock() {
         return new Location(Bukkit.getWorld(UUID.fromString(worldUuid)), holeLocX, holeLocY, holeLocZ).getBlock();
+    }
+
+    public List<Teleporters> getTeleporters() {
+        if (teleporters == null) {
+            teleporters = new ArrayList<>();
+        }
+        return teleporters;
+    }
+
+    public void createNewTeleporter(Block startBlock, Block destinationBlock) {
+        if (teleporters == null) {
+            teleporters = new ArrayList<>();
+        }
+        teleporters.add(Teleporters.builder()
+                .startingLocX(startBlock.getX())
+                .startingLocY(startBlock.getY())
+                .startingLocZ(startBlock.getZ())
+                .destinationLocX(destinationBlock.getX())
+                .destinationLocY(destinationBlock.getY())
+                .destinationLocZ(destinationBlock.getZ())
+                .northFaceDestinationDirection(BlockFace.SOUTH)
+                .southFaceDestinationDirection(BlockFace.NORTH)
+                .eastFaceDestinationDirection(BlockFace.WEST)
+                .westFaceDestinationDirection(BlockFace.EAST)
+            .build());
+    }
+
+    public void deleteTeleporter(Block teleporterToDelete) {
+        if (teleporters == null) {
+            teleporters = new ArrayList<>();
+        }
+        List<Teleporters> teleportersToDelete = new ArrayList<>();
+        for (Teleporters t : teleporters) {
+            if ((t.getStartingLocX() == teleporterToDelete.getX() && t.getStartingLocY() == teleporterToDelete.getY() && t.getStartingLocZ() == teleporterToDelete.getZ()) ||
+                (t.getDestinationLocX() == teleporterToDelete.getX() && t.getDestinationLocY() == teleporterToDelete.getY() && t.getDestinationLocZ() == teleporterToDelete.getZ())) {
+                teleportersToDelete.add(t);
+            }
+        }
+        teleportersToDelete.forEach(t -> teleporters.remove(t));
     }
 
     public void playerStartedPlayingHole(Player p) {
