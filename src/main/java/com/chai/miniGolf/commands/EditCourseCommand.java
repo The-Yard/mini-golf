@@ -190,12 +190,12 @@ public class EditCourseCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.WHITE + "[MiniGolf]" + ChatColor.RED + args[0] + " is not a valid Hole index.");
             return true;
         }
-        if (holeToRemoveIndex >= playersEditingCourses.get(sender.getUniqueId()).getHoles().size()) {
+        if (holeToRemoveIndex > playersEditingCourses.get(sender.getUniqueId()).getHoles().size() || holeToRemoveIndex < 1) {
             sender.sendMessage(String.format("%s[MiniGolf]%s There are only %s holes, you cannot remove a hole with index %s%s", ChatColor.WHITE, ChatColor.RED, playersEditingCourses.get(sender.getUniqueId()).getHoles().size(), holeToRemoveIndex, ChatColor.RESET));
             return true;
         }
-        sender.sendMessage(String.format("%s[MiniGolf] remove hole at index %s, any holes behind will be pulled forward an index%s", ChatColor.WHITE, holeToRemoveIndex, ChatColor.RESET));
-        getPlugin().config().removeHole(playersEditingCourses.get(sender.getUniqueId()), holeToRemoveIndex);
+        sender.sendMessage(String.format("%s[MiniGolf] removed hole at index %s, any holes behind will be pulled forward an index%s", ChatColor.WHITE, holeToRemoveIndex, ChatColor.RESET));
+        getPlugin().config().removeHole(playersEditingCourses.get(sender.getUniqueId()), holeToRemoveIndex - 1);
         return true;
     }
 
@@ -278,6 +278,7 @@ public class EditCourseCommand implements CommandExecutor, TabCompleter {
         Block endBlock = sender.getWorld().getBlockAt(x2, y2, z2);
         endBlock.setType(OBSIDIAN);
         getPlugin().config().createTeleporters(course, holeNumber - 1, startBlock, endBlock);
+        sender.sendMessage(String.format("%s[MiniGolf] Created Teleporters.%s", ChatColor.WHITE, ChatColor.RESET));
         return true;
     }
 
@@ -310,6 +311,7 @@ public class EditCourseCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(String.format("%s[MiniGolf]%s For your info, there seems to be %s teleporters that end at this block. Only updating the rules of the first one.%s", ChatColor.WHITE, ChatColor.RED, teleporters.size(), ChatColor.RESET));
         }
         getPlugin().config().updateTeleporterRule(course, teleporters.get(0), hitFace, destinationFace);
+        sender.sendMessage(String.format("%s[MiniGolf] Updated Teleporter so when it hits %s, it will now exit %s.%s", ChatColor.WHITE, hitFace, destinationFace, ChatColor.RESET));
         return true;
     }
 
@@ -382,8 +384,13 @@ public class EditCourseCommand implements CommandExecutor, TabCompleter {
         }
         Location holeLoc = sender.getLocation();
         if (!holeLoc.getBlock().getType().equals(CAULDRON)) {
-            sender.sendMessage(String.format("%s[MiniGolf]%s The hole must be a cauldron.%s", ChatColor.WHITE, ChatColor.RED, ChatColor.RESET));
-            return true;
+            Block blockBelow = holeLoc.getBlock().getRelative(0, -1, 0);
+            if (blockBelow.getType().equals(CAULDRON)) {
+                holeLoc = blockBelow.getLocation();
+            } else {
+                sender.sendMessage(String.format("%s[MiniGolf]%s The hole must be a cauldron.%s", ChatColor.WHITE, ChatColor.RED, ChatColor.RESET));
+                return true;
+            }
         }
         sender.sendMessage(String.format("%s[MiniGolf] Setting Hole Location for hole %s to the cauldron beneath you%s", ChatColor.WHITE, holeNumber, ChatColor.RESET));
         getPlugin().config().setHoleLocation(course, holeNumber - 1, holeLoc);
@@ -392,7 +399,11 @@ public class EditCourseCommand implements CommandExecutor, TabCompleter {
 
     private static Boolean doneEditing(String[] args, Player sender) {
         sender.sendMessage(String.format("%s[MiniGolf] Finished editing \"%s\"%s", ChatColor.WHITE, playersEditingCourses.get(sender.getUniqueId()).getName(), ChatColor.RESET));
-        playersEditingCourses.remove(sender.getUniqueId());
+        removeEditor(sender);
         return true;
+    }
+
+    public static void removeEditor(Player editor) {
+        playersEditingCourses.remove(editor.getUniqueId());
     }
 }

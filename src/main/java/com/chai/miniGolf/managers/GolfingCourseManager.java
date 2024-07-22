@@ -58,6 +58,7 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import static com.chai.miniGolf.Main.getPlugin;
+import static com.chai.miniGolf.commands.EditCourseCommand.removeEditor;
 import static com.chai.miniGolf.managers.ScorecardManager.holeResultColor;
 import static com.chai.miniGolf.managers.ScorecardManager.holeResultString;
 import static com.chai.miniGolf.utils.SharedMethods.isBottomSlab;
@@ -245,6 +246,7 @@ public class GolfingCourseManager implements Listener {
     @EventHandler
     private void onPlayerQuit(PlayerQuitEvent event) {
         Bukkit.getPluginManager().callEvent(new PlayerDoneGolfingEvent(event.getPlayer()));
+        removeEditor(event.getPlayer());
     }
 
     @EventHandler
@@ -324,9 +326,12 @@ public class GolfingCourseManager implements Listener {
                 }
                 break;
             case SLIME_BLOCK:
-                vel.setY(0.25);
-                ball.setVelocity(vel);
-                break;
+                if (vel.getY() == 0) {
+                    System.out.println("Breaking now");
+                    vel.setY(0.25);
+                    ball.setVelocity(vel);
+                    break;
+                }
             case ICE:
             case PACKED_ICE:
             case BLUE_ICE:
@@ -470,7 +475,7 @@ public class GolfingCourseManager implements Listener {
         p.showTitle(Title.title(Component.text(holeResultString(course.getHoles().get(course.playersCurrentHole(golfer.getKey())), par)), Component.empty(), Title.Times.times(Duration.ZERO, Duration.ofSeconds(2), Duration.ZERO)));
 
         // Spawn firework
-        Firework firework = (Firework) ball.getWorld().spawnEntity(ball.getLocation(), EntityType.FIREWORK);
+        Firework firework = (Firework) ball.getWorld().spawnEntity(ball.getLocation(), EntityType.FIREWORK_ROCKET);
         FireworkMeta meta = firework.getFireworkMeta();
         meta.setPower(1);
         meta.addEffect(FireworkEffect.builder().withColor(holeResultColor(course.getHoles().get(course.playersCurrentHole(golfer.getKey())), par)).with(FireworkEffect.Type.BALL).build());

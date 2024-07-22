@@ -89,7 +89,7 @@ public class ProjectileListener implements Listener
 						//loc.setZ(Math.round(loc.getZ()));
 						//ball.teleport(loc);
 					} else if (mat == Material.SLIME_BLOCK) {
-						vel.setZ(Math.copySign(0.25, -vel.getZ()));
+						vel.setZ(1.25 * -vel.getZ());
 					} else if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
 						handleIronBars(vel, ball);
 					} else if (mat == Material.OBSIDIAN && golferUuid.isPresent()) {
@@ -111,7 +111,7 @@ public class ProjectileListener implements Listener
 						//loc.setX(Math.round(loc.getX()));
 						//ball.teleport(loc);
 					} else if (mat == Material.SLIME_BLOCK) {
-						vel.setX(Math.copySign(0.25, -vel.getX()));
+						vel.setX(1.25 * -vel.getX());
 					} else if (mat == Material.IRON_BARS && getPlugin().config().getFlagPoleStopsVelocity()) {
 						handleIronBars(vel, ball);
 					} else if (mat == Material.OBSIDIAN && golferUuid.isPresent()) {
@@ -145,6 +145,13 @@ public class ProjectileListener implements Listener
 
 					vel.setY(-vel.getY());
 					vel.multiply(0.7);
+
+					if (mat == Material.SLIME_BLOCK) {
+						System.out.println("We hit slime!");
+						vel.setY(vel.getY() * 1.2);
+					} else {
+						System.out.println("We did not hit slime... " + mat);
+					}
 
 					if (vel.getY() < 0.1) {
 						vel.setY(0);
